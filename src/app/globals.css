@@ -103,7 +103,7 @@
   }
 } */
 
-@tailwind base;
+/* @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -201,4 +201,4 @@
   .placeholder-preview {
     @apply flex items-center justify-center h-full w-full bg-muted/30 rounded-lg border border-dashed border-muted-foreground/50 text-muted-foreground;
   }
-}
+} */
