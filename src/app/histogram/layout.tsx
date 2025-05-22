@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Photo Editor - Histogram Analysis",
+  title: "Histogram Analysis",
   description: "Analyze and equalize image histograms for better contrast and exposure",
 }
 

@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Photo Editor - Basic Editing",
+  title: "Basic Editing",
   description: "Basic photo editing tools including brightness, contrast, and saturation adjustments",
 }
 

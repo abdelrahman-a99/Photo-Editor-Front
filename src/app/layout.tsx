@@ -12,8 +12,11 @@ import { Navbar } from "@/components/layout/Navbar";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Photo Editor",
-  description: "Photo Editor Website",
+  title: {
+    template: "%s - Photo Editor",
+    default: "Photo Editor - Upload",
+  },
+  description: "A powerful photo editor with advanced image processing capabilities",
 };
 
 export default function RootLayout({

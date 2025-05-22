@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Photo Editor - Noise & FFT",
+  title: "Noise & FFT",
   description: "Add or remove noise from images and perform FFT analysis for frequency domain processing",
 }
 
