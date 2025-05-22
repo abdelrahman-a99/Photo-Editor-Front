@@ -8,9 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
+import { useState } from "react"
 
 const Noise = () => {
   const { currentImage } = usePhotoStore()
+  const [noiseDensity, setNoiseDensity] = useState(10)
+  const [kernelSize, setKernelSize] = useState(3)
+  const [noiseType, setNoiseType] = useState("salt-pepper")
+  const [filterType, setFilterType] = useState("median")
 
   return (
     <div className="container mx-auto py-6 flex flex-col gap-6">
@@ -45,7 +50,11 @@ const Noise = () => {
                     <TabsContent value="add" className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="noise-type" className="text-gray-700 dark:text-gray-300">Noise Type</Label>
-                        <Select disabled={!currentImage} defaultValue="salt-pepper">
+                        <Select 
+                          disabled={!currentImage} 
+                          value={noiseType}
+                          onValueChange={setNoiseType}
+                        >
                           <SelectTrigger id="noise-type" className="border-gray-200 dark:border-gray-700">
                             <SelectValue placeholder="Select noise type" />
                           </SelectTrigger>
@@ -59,14 +68,15 @@ const Noise = () => {
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <Label htmlFor="noise-density" className="text-gray-700 dark:text-gray-300">Noise Density</Label>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">10%</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">{noiseDensity}%</span>
                         </div>
                         <Slider 
                           id="noise-density"
                           min={1} 
-                          max={50} 
+                          max={100} 
                           step={1} 
-                          defaultValue={[10]}
+                          value={[noiseDensity]}
+                          onValueChange={(value) => setNoiseDensity(value[0])}
                           disabled={!currentImage}
                         />
                       </div>
@@ -82,7 +92,11 @@ const Noise = () => {
                     <TabsContent value="remove" className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="filter-type" className="text-gray-700 dark:text-gray-300">Filter Type</Label>
-                        <Select disabled={!currentImage} defaultValue="median">
+                        <Select 
+                          disabled={!currentImage} 
+                          value={filterType}
+                          onValueChange={setFilterType}
+                        >
                           <SelectTrigger id="filter-type" className="border-gray-200 dark:border-gray-700">
                             <SelectValue placeholder="Select filter type" />
                           </SelectTrigger>
@@ -97,14 +111,15 @@ const Noise = () => {
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <Label htmlFor="kernel-size" className="text-gray-700 dark:text-gray-300">Kernel Size</Label>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">3x3</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">{kernelSize}x{kernelSize}</span>
                         </div>
                         <Slider 
                           id="kernel-size"
                           min={3} 
                           max={9} 
                           step={2} 
-                          defaultValue={[3]}
+                          value={[kernelSize]}
+                          onValueChange={(value) => setKernelSize(value[0])}
                           disabled={!currentImage}
                         />
                       </div>

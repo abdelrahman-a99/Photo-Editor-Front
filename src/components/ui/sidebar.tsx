@@ -166,7 +166,9 @@ const Sidebar = React.forwardRef<
 >(
   (
     {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       side = "left",
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       variant = "sidebar",
       collapsible = "offcanvas",
       className,
