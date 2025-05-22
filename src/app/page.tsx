@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { Metadata } from "next"
 
 import { Button } from "@/components/ui/button"
 
@@ -8,6 +9,11 @@ import { Upload } from "lucide-react"
 
 import { ImageDisplay } from "@/components/editor/ImageDisplay"
 import { usePhotoStore } from "@/store/photo-store"
+
+export const metadata: Metadata = {
+  title: "Photo Editor - Upload",
+  description: "Upload and edit your photos with our powerful photo editor",
+}
 
 export default function Home() {
   const { uploadImage } = usePhotoStore()

@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button"
 import { ImageDisplay } from "@/components/editor/ImageDisplay"
 import { usePhotoStore } from "@/store/photo-store"
 import { LineChart, BarChart } from "lucide-react"
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Photo Editor - Histogram Analysis",
+  description: "Analyze and equalize image histograms for better contrast and exposure",
+}
 
 const Histogram = () => {
   const { currentImage } = usePhotoStore()

@@ -9,6 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Photo Editor - Noise & FFT",
+  description: "Add or remove noise from images and perform FFT analysis for frequency domain processing",
+}
 
 const Noise = () => {
   const { currentImage } = usePhotoStore()
