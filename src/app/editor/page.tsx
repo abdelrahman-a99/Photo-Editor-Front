@@ -9,12 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { usePhotoStore } from "@/store/photo-store"
 import { RotateCw, Crop as CropIcon, Maximize } from "lucide-react"
 import { Label } from "@/components/ui/label"
-import { Metadata } from "next"
-
-export const metadata: Metadata = {
-  title: "Photo Editor - Basic Editing",
-  description: "Basic photo editing tools including brightness, contrast, and saturation adjustments",
-}
 
 const Editor = () => {
   const { currentImage } = usePhotoStore()
