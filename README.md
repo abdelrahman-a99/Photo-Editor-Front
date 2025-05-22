@@ -50,7 +50,7 @@ A modern web-based photo editor built with Next.js, React, and Tailwind CSS. Thi
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/photo-editor.git
+git clone https://github.com/abdelrahman-a99/Photo-Editor-Front.git
 cd photo-editor
 ```
 
