@@ -19,7 +19,7 @@ const Editor = () => {
   return (
     <div className="container mx-auto py-6 flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Basic Editing</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Basic Editing</h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -28,23 +28,23 @@ const Editor = () => {
         </div>
         
         <div className="lg:col-span-1 space-y-6">
-          <Card>
-            <CardHeader className="px-4 py-3">
-              <CardTitle className="text-base">Tools</CardTitle>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <CardHeader className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <CardTitle className="text-base text-gray-900 dark:text-gray-100">Tools</CardTitle>
             </CardHeader>
             <CardContent className="px-4 py-3">
               <Tabs defaultValue="adjust">
-                <TabsList className="w-full mb-4">
-                  <TabsTrigger value="adjust" className="flex-1">Adjust</TabsTrigger>
-                  <TabsTrigger value="transform" className="flex-1">Transform</TabsTrigger>
+                <TabsList className="w-full mb-4 bg-gray-100 dark:bg-gray-700">
+                  <TabsTrigger value="adjust" className="flex-1 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">Adjust</TabsTrigger>
+                  <TabsTrigger value="transform" className="flex-1 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">Transform</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="adjust" className="space-y-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <Label htmlFor="brightness">Brightness</Label>
-                        <span className="text-sm text-muted-foreground">{brightness}%</span>
+                        <Label htmlFor="brightness" className="text-gray-700 dark:text-gray-300">Brightness</Label>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{brightness}%</span>
                       </div>
                       <Slider 
                         id="brightness"
@@ -59,8 +59,8 @@ const Editor = () => {
                     
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <Label htmlFor="contrast">Contrast</Label>
-                        <span className="text-sm text-muted-foreground">{contrast}%</span>
+                        <Label htmlFor="contrast" className="text-gray-700 dark:text-gray-300">Contrast</Label>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{contrast}%</span>
                       </div>
                       <Slider 
                         id="contrast"
@@ -75,8 +75,8 @@ const Editor = () => {
                     
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <Label htmlFor="saturation">Saturation</Label>
-                        <span className="text-sm text-muted-foreground">{saturation}%</span>
+                        <Label htmlFor="saturation" className="text-gray-700 dark:text-gray-300">Saturation</Label>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{saturation}%</span>
                       </div>
                       <Slider 
                         id="saturation"
@@ -94,19 +94,31 @@ const Editor = () => {
                 <TabsContent value="transform">
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-2">
-                      <Button disabled={!currentImage} variant="outline" className="flex items-center gap-2">
+                      <Button 
+                        disabled={!currentImage} 
+                        variant="outline" 
+                        className="flex items-center gap-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
                         <CropIcon className="h-4 w-4" />
                         <span>Crop</span>
                       </Button>
                       
-                      <Button disabled={!currentImage} variant="outline" className="flex items-center gap-2">
+                      <Button 
+                        disabled={!currentImage} 
+                        variant="outline" 
+                        className="flex items-center gap-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
                         <RotateCw className="h-4 w-4" />
                         <span>Rotate</span>
                       </Button>
                     </div>
                     
                     <div className="pt-2">
-                      <Button disabled={!currentImage} variant="outline" className="w-full flex items-center gap-2">
+                      <Button 
+                        disabled={!currentImage} 
+                        variant="outline" 
+                        className="w-full flex items-center gap-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
                         <Maximize className="h-4 w-4" />
                         <span>Resize</span>
                       </Button>
@@ -119,7 +131,7 @@ const Editor = () => {
 
           <Button 
             variant="outline" 
-            className="w-full" 
+            className="w-full border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700" 
             disabled={!currentImage}
           >
             Reset Changes

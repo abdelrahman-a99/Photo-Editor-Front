@@ -22,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className="h-full">
+      <body className="h-full bg-white dark:bg-gray-950">
         <Providers>
           <TooltipProvider>
             <SidebarProvider>
@@ -31,7 +31,7 @@ export default function RootLayout({
                 <AppSidebar />
                 <div className="flex-1 flex flex-col min-h-screen">
                   <Navbar />
-                  <main className="flex-1">
+                  <main className="flex-1 bg-gray-50 dark:bg-gray-900">
                     {children}
                   </main>
                 </div>
