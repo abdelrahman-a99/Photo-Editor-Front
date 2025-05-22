@@ -23,11 +23,11 @@ export const Navbar = () => {
   }, [uploadImage])
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center bg-white/95 dark:bg-gray-950/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-950/60">
       <div className="container flex items-center justify-between">
         <div className="flex items-center gap-2">
           <SidebarTrigger />
-          <h1 className="text-xl font-bold">Photo Editor</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Photo Editor</h1>
         </div>
 
         <div className="flex items-center gap-4">

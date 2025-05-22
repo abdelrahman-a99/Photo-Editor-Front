@@ -6,9 +6,9 @@ export const ImageDisplay = () => {
   const { currentImage } = usePhotoStore()
   
   return (
-    <Card className="flex-1 p-1 min-h-[300px] h-full overflow-hidden">
+    <Card className="flex-1 p-1 min-h-[300px] h-full overflow-hidden bg-white dark:bg-gray-950">
       {currentImage ? (
-        <div className="relative w-full h-full flex items-center justify-center bg-black/5 rounded-sm">
+        <div className="relative w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-sm">
           <img 
             src={currentImage} 
             alt="Edited photo" 
@@ -16,7 +16,7 @@ export const ImageDisplay = () => {
           />
         </div>
       ) : (
-        <div className="placeholder-preview flex-col">
+        <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
           <ImageIcon className="h-10 w-10 mb-2 opacity-30" />
           <p>Upload an image to get started</p>
         </div>
