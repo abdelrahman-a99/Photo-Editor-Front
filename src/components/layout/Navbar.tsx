@@ -8,7 +8,7 @@ import { usePhotoStore } from "@/store/photo-store"
 import { useToast } from "@/hooks/use-toast"
 
 export const Navbar = () => {
-  const { uploadImage, currentImage, isProcessing, error } = usePhotoStore()
+  const { uploadImage, currentImage, isProcessing, error, downloadImage } = usePhotoStore()
   const { toast } = useToast()
 
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,6 +35,22 @@ export const Navbar = () => {
       reader.readAsDataURL(file)
     }
   }, [uploadImage, toast])
+
+  const handleDownload = useCallback(async () => {
+    try {
+      await downloadImage();
+      toast({
+        title: "Success",
+        description: "Image downloaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to download image",
+        variant: "destructive",
+      });
+    }
+  }, [downloadImage, toast]);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center bg-white/95 dark:bg-gray-950/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-950/60">
@@ -70,6 +86,7 @@ export const Navbar = () => {
             variant="default"
             size="sm"
             disabled={!currentImage || isProcessing}
+            onClick={handleDownload}
           >
             <Download className="mr-2 h-4 w-4" />
             Download
