@@ -13,7 +13,7 @@ import ReactCrop, { Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 
 const Editor = () => {
-  const { currentImage, originalImage, rotateImage, cropImage, resizeImage, resetImage } = usePhotoStore()
+  const { currentImage, originalImage, rotateImage, cropImage, resizeImage, resetImage, adjustImage } = usePhotoStore()
   const [brightness, setBrightness] = useState(100)
   const [contrast, setContrast] = useState(100)
   const [saturation, setSaturation] = useState(100)
@@ -34,6 +34,9 @@ const Editor = () => {
   useEffect(() => {
     if (currentImage === originalImage) {
       setScale(100)
+      setBrightness(100)
+      setContrast(100)
+      setSaturation(100)
     }
   }, [currentImage, originalImage])
 
@@ -142,6 +145,21 @@ const Editor = () => {
     setScale(100)
   }
 
+  const handleAdjust = (type: 'brightness' | 'contrast' | 'saturation', value: number) => {
+    switch (type) {
+      case 'brightness':
+        setBrightness(value)
+        break
+      case 'contrast':
+        setContrast(value)
+        break
+      case 'saturation':
+        setSaturation(value)
+        break
+    }
+    adjustImage(brightness, contrast, saturation)
+  }
+
   return (
     <div className="container mx-auto py-6 flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -233,7 +251,7 @@ const Editor = () => {
                         max={200} 
                         step={1} 
                         value={[brightness]}
-                        onValueChange={(value) => setBrightness(value[0])}
+                        onValueChange={(value) => handleAdjust('brightness', value[0])}
                         disabled={!currentImage}
                       />
                     </div>
@@ -249,7 +267,7 @@ const Editor = () => {
                         max={200} 
                         step={1} 
                         value={[contrast]}
-                        onValueChange={(value) => setContrast(value[0])}
+                        onValueChange={(value) => handleAdjust('contrast', value[0])}
                         disabled={!currentImage}
                       />
                     </div>
@@ -265,7 +283,7 @@ const Editor = () => {
                         max={200} 
                         step={1} 
                         value={[saturation]}
-                        onValueChange={(value) => setSaturation(value[0])}
+                        onValueChange={(value) => handleAdjust('saturation', value[0])}
                         disabled={!currentImage}
                       />
                     </div>

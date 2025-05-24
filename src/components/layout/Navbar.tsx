@@ -38,11 +38,19 @@ export const Navbar = () => {
 
   const handleDownload = useCallback(async () => {
     try {
-      await downloadImage();
-      toast({
-        title: "Success",
-        description: "Image downloaded successfully",
-      });
+      const result = await downloadImage();
+      if (result?.success) {
+        toast({
+          title: "Success",
+          description: "Image downloaded successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result?.error || "Failed to download image",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
