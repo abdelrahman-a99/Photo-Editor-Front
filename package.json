@@ -57,6 +57,7 @@
     "react-dom": "^19.0.0",
     "react-image-crop": "^11.0.10",
 >>>>>>> c5dc454fe8d6c0bd5c4c024cf8b6099e585b856c
+    "react-image-crop": "^11.0.10",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
