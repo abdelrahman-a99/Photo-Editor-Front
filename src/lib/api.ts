@@ -18,12 +18,15 @@ export const uploadImage = async (file: File) => {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      validateStatus: function (status) {
+        return status < 500; // Resolve only if the status code is less than 500
+      }
     });
     
     console.log('Server response:', response.data);
     
-    if (!response.data) {
-      throw new Error('No response data received from server');
+    if (response.status !== 201) {
+      throw new Error(response.data?.message || 'Failed to upload image');
     }
     
     return response.data;
