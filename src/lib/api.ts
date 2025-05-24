@@ -94,8 +94,11 @@ export const downloadImage = async (filename: string) => {
         reader.readAsText(response.data);
       });
       const error = JSON.parse(text as string);
-      console.error('Download error (400):', error);
-      throw new Error('Please apply some operations to the image before downloading. No changes have been made to this image yet.');
+      console.log('Image not processed:', error);
+      return { 
+        success: false, 
+        error: 'Please apply some operations to the image before downloading. No changes have been made to this image yet.' 
+      };
     }
 
     if (response.status === 404) {
@@ -105,13 +108,19 @@ export const downloadImage = async (filename: string) => {
         reader.readAsText(response.data);
       });
       const error = JSON.parse(text as string);
-      console.error('Download error (404):', error);
-      throw new Error(error.error || 'Image not found');
+      console.log('Image not found:', error);
+      return { 
+        success: false, 
+        error: 'Image not found' 
+      };
     }
 
     if (response.status !== 200) {
-      console.error('Download error:', response.status);
-      throw new Error('Failed to download image');
+      console.log('Download failed:', response.status);
+      return { 
+        success: false, 
+        error: 'Failed to download image' 
+      };
     }
 
     // Create a download link and trigger it
@@ -124,15 +133,18 @@ export const downloadImage = async (filename: string) => {
     link.remove();
     window.URL.revokeObjectURL(url);
 
-    return true;
+    return { success: true };
   } catch (error) {
-    console.error('Download error:', error);
+    console.log('Download error:', error);
     if (axios.isAxiosError(error)) {
-      if (error.response?.status === 404) {
-        throw new Error('Image not found');
-      }
-      throw new Error(error.response?.data?.error || 'Failed to download image');
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Failed to download image' 
+      };
     }
-    throw error;
+    return { 
+      success: false, 
+      error: 'An unexpected error occurred while downloading the image' 
+    };
   }
 }; 
