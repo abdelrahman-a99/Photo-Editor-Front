@@ -14,9 +14,9 @@ import 'react-image-crop/dist/ReactCrop.css'
 
 const Editor = () => {
   const { currentImage, originalImage, rotateImage, cropImage, resizeImage, resetImage, adjustImage } = usePhotoStore()
-  const [brightness, setBrightness] = useState(100)
-  const [contrast, setContrast] = useState(100)
-  const [saturation, setSaturation] = useState(100)
+  const [brightness, setBrightness] = useState(0)
+  const [contrast, setContrast] = useState(0)
+  const [saturation, setSaturation] = useState(0)
   const [crop, setCrop] = useState<Crop>({
     unit: '%',
     width: 90,
@@ -25,7 +25,7 @@ const Editor = () => {
     y: 5
   })
   const [isCropping, setIsCropping] = useState(false)
-  const [scale, setScale] = useState(100)
+  const [scale, setScale] = useState(0)
   const imgRef = useRef<HTMLImageElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const lastCropRef = useRef<Crop | null>(null)
@@ -33,10 +33,10 @@ const Editor = () => {
   // Reset scale when image is reset
   useEffect(() => {
     if (currentImage === originalImage) {
-      setScale(100)
-      setBrightness(100)
-      setContrast(100)
-      setSaturation(100)
+      setScale(0)
+      setBrightness(0)
+      setContrast(0)
+      setSaturation(0)
     }
   }, [currentImage, originalImage])
 
@@ -124,7 +124,8 @@ const Editor = () => {
   }
 
   const handleResize = (value: number[]) => {
-    const newScale = value[0] / 100
+    // Convert from -100 to 100 range to 0.5 to 1.5 scale
+    const newScale = 1 + (value[0] / 200)
     setScale(value[0])
     resizeImage(newScale)
   }
@@ -142,22 +143,34 @@ const Editor = () => {
 
   const handleReset = () => {
     resetImage()
-    setScale(100)
+    setScale(0)
   }
 
   const handleAdjust = (type: 'brightness' | 'contrast' | 'saturation', value: number) => {
+    let newBrightness = brightness
+    let newContrast = contrast
+    let newSaturation = saturation
+
     switch (type) {
       case 'brightness':
+        newBrightness = value
         setBrightness(value)
         break
       case 'contrast':
+        newContrast = value
         setContrast(value)
         break
       case 'saturation':
+        newSaturation = value
         setSaturation(value)
         break
     }
-    adjustImage(brightness, contrast, saturation)
+    // Convert from -100 to 100 range to 0 to 200 range
+    adjustImage(
+      newBrightness + 100,
+      newContrast + 100,
+      newSaturation + 100
+    )
   }
 
   return (
@@ -247,8 +260,8 @@ const Editor = () => {
                       </div>
                       <Slider 
                         id="brightness"
-                        min={0} 
-                        max={200} 
+                        min={-100} 
+                        max={100} 
                         step={1} 
                         value={[brightness]}
                         onValueChange={(value) => handleAdjust('brightness', value[0])}
@@ -263,8 +276,8 @@ const Editor = () => {
                       </div>
                       <Slider 
                         id="contrast"
-                        min={0} 
-                        max={200} 
+                        min={-100} 
+                        max={100} 
                         step={1} 
                         value={[contrast]}
                         onValueChange={(value) => handleAdjust('contrast', value[0])}
@@ -279,8 +292,8 @@ const Editor = () => {
                       </div>
                       <Slider 
                         id="saturation"
-                        min={0} 
-                        max={200} 
+                        min={-100} 
+                        max={100} 
                         step={1} 
                         value={[saturation]}
                         onValueChange={(value) => handleAdjust('saturation', value[0])}
@@ -321,8 +334,8 @@ const Editor = () => {
                       </div>
                       <Slider 
                         id="resize"
-                        min={10} 
-                        max={200} 
+                        min={-100} 
+                        max={100} 
                         step={1} 
                         value={[scale]}
                         onValueChange={handleResize}
