@@ -8,18 +8,32 @@ import { Upload } from "lucide-react"
 
 import { ImageDisplay } from "@/components/editor/ImageDisplay"
 import { usePhotoStore } from "@/store/photo-store"
+import { useToast } from "@/hooks/use-toast"
 
 export default function Home() {
   const { uploadImage } = usePhotoStore()
+  const { toast } = useToast()
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0]
       const reader = new FileReader()
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         if (event.target && typeof event.target.result === "string") {
-          uploadImage(event.target.result, file.name)
+          try {
+            await uploadImage(event.target.result, file.name)
+            toast({
+              title: "Success",
+              description: "Image uploaded successfully",
+            })
+          } catch (error) {
+            toast({
+              title: "Error",
+              description: error instanceof Error ? error.message : "Failed to upload image",
+              variant: "destructive",
+            })
+          }
         }
       }
       reader.readAsDataURL(file)
@@ -62,13 +76,25 @@ export default function Home() {
                 id="home-file-upload"
                 className="hidden"
                 accept="image/*"
-                onChange={(e) => {
+                onChange={async (e) => {
                   if (e.target.files && e.target.files[0]) {
                     const file = e.target.files[0]
                     const reader = new FileReader()
-                    reader.onload = (event) => {
+                    reader.onload = async (event) => {
                       if (event.target && typeof event.target.result === "string") {
-                        uploadImage(event.target.result, file.name)
+                        try {
+                          await uploadImage(event.target.result, file.name)
+                          toast({
+                            title: "Success",
+                            description: "Image uploaded successfully",
+                          })
+                        } catch (error) {
+                          toast({
+                            title: "Error",
+                            description: error instanceof Error ? error.message : "Failed to upload image",
+                            variant: "destructive",
+                          })
+                        }
                       }
                     }
                     reader.readAsDataURL(file)
