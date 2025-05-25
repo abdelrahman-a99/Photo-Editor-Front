@@ -16,6 +16,7 @@ interface PhotoState {
   brightness: number
   contrast: number
   saturation: number
+  applyFilter: (filterType: string, params: Record<string, number | string>) => Promise<void>
 
   uploadImage: (imageData: string, name: string) => Promise<void>
   downloadImage: () => Promise<{ success: boolean; error: string | null }>
@@ -345,5 +346,60 @@ export const usePhotoStore = create<PhotoState>((set, get) => ({
     });
     
     return state;
-  })
+  }),
+
+  applyFilter: async (filterType: string, params: Record<string, number | string>) => {
+    const state = get();
+    if (!state.imageName) {
+      set({ error: 'No image selected' });
+      return;
+    }
+
+    try {
+      set({ isProcessing: true, error: null });
+
+      // Convert current image to blob
+      const response = await fetch(state.currentImage!);
+      const blob = await response.blob();
+      const file = new File([blob], state.imageName, { type: blob.type });
+
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', filterType);
+      formData.append('params', JSON.stringify(params));
+
+      // Send to backend
+      const filterResponse = await axios.post(`${API_BASE_URL}/filters/apply`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+
+      if (filterResponse.data.processed_image) {
+        // Fetch the processed image
+        const processedImageResponse = await fetch(`${API_BASE_URL}/static/uploads/${filterResponse.data.processed_image}`);
+        if (!processedImageResponse.ok) {
+          throw new Error('Failed to fetch processed image');
+        }
+        const processedImageBlob = await processedImageResponse.blob();
+        const processedImageUrl = URL.createObjectURL(processedImageBlob);
+
+        set({
+          currentImage: processedImageUrl,
+          imageName: filterResponse.data.processed_image,
+          isProcessing: false,
+          error: null
+        });
+      } else {
+        throw new Error('Failed to process image');
+      }
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to apply filter',
+        isProcessing: false
+      });
+      throw error;
+    }
+  },
 }))
