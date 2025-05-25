@@ -185,4 +185,44 @@ export const equalizeHistogram = async (imagePath: string) => {
     }
     throw error;
   }
+};
+
+export const generateFFT = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await axios.post(`${API_BASE_URL}/fft/apply`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || 'Failed to generate FFT');
+    }
+    throw error;
+  }
+};
+
+export const applyInverseFFT = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await axios.post(`${API_BASE_URL}/fft/inverse`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || 'Failed to apply inverse FFT');
+    }
+    throw error;
+  }
 }; 

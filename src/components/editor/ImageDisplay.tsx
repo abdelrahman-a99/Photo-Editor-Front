@@ -2,15 +2,20 @@ import { usePhotoStore } from "@/store/photo-store"
 import { Card } from "@/components/ui/card"
 import { ImageIcon } from "lucide-react"
 
-export const ImageDisplay = () => {
+interface ImageDisplayProps {
+  image?: string | null;
+}
+
+export const ImageDisplay = ({ image }: ImageDisplayProps) => {
   const { currentImage } = usePhotoStore()
+  const displayImage = image ?? currentImage
   
   return (
     <Card className="flex-1 p-1 min-h-[300px] h-full overflow-hidden bg-white dark:bg-gray-950">
-      {currentImage ? (
+      {displayImage ? (
         <div className="relative w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-sm">
           <img 
-            src={currentImage} 
+            src={displayImage} 
             alt="Edited photo" 
             className="max-h-full max-w-full object-contain"
           />
