@@ -9,13 +9,189 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
+import { useToast } from "@/hooks/use-toast"
 
 const Noise = () => {
-  const { currentImage } = usePhotoStore()
+  const { currentImage, setCurrentImage, imageName } = usePhotoStore()
   const [noiseDensity, setNoiseDensity] = useState(10)
   const [kernelSize, setKernelSize] = useState(3)
   const [noiseType, setNoiseType] = useState("salt-pepper")
   const [filterType, setFilterType] = useState("median")
+  const [frequency, setFrequency] = useState(20)
+  const [amplitude, setAmplitude] = useState(50)
+  const [pattern, setPattern] = useState("sine")
+  const [cutoffFreq, setCutoffFreq] = useState(30)
+  const [bandWidth, setBandWidth] = useState(10)
+  const [selectedPoints, setSelectedPoints] = useState<{x: number, y: number}[]>([])
+  const { toast } = useToast()
+
+  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (filterType !== 'notch' || !currentImage) return
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    
+    // Convert click coordinates to relative position (-1 to 1)
+    const relativeX = (x / rect.width) * 2 - 1
+    const relativeY = -((y / rect.height) * 2 - 1)  // Invert Y axis
+    
+    setSelectedPoints(prev => [...prev, { x: relativeX, y: relativeY }])
+    
+    toast({
+      title: "Point Selected",
+      description: `Added point at (${Math.round(relativeX * 100)}, ${Math.round(relativeY * 100)})`,
+    })
+  }
+
+  const handleAddNoise = async () => {
+    if (!currentImage || !imageName) return
+
+    try {
+      const formData = new FormData()
+      // Convert base64 to File
+      const imageResponse = await fetch(currentImage)
+      const imageBlob = await imageResponse.blob()
+      const file = new File([imageBlob], imageName, { type: 'image/png' })
+      formData.append('file', file)
+      formData.append('type', noiseType === 'salt-pepper' ? 'salt_pepper' : noiseType)
+      
+      // Set parameters based on noise type
+      let params = {}
+      if (noiseType === 'salt-pepper') {
+        params = {
+          density: noiseDensity / 100 // Convert percentage to decimal
+        }
+      } else if (noiseType === 'periodic') {
+        params = {
+          frequency: frequency,
+          amplitude: amplitude,
+          pattern: pattern
+        }
+      }
+      
+      formData.append('params', JSON.stringify(params))
+
+      const noiseResponse = await fetch('http://localhost:5000/noise/add', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!noiseResponse.ok) {
+        const errorData = await noiseResponse.json()
+        throw new Error(errorData.error || 'Failed to add noise')
+      }
+
+      const data = await noiseResponse.json()
+      
+      // Fetch the processed image from the backend
+      const processedImageResponse = await fetch(`http://localhost:5000/static/uploads/${data.processed_image}`)
+      if (!processedImageResponse.ok) {
+        throw new Error('Failed to fetch processed image')
+      }
+      
+      const processedBlob = await processedImageResponse.blob()
+      const processedImage = new File([processedBlob], imageName, { type: 'image/png' })
+      
+      // Convert File to base64 for the store
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setCurrentImage(reader.result)
+        }
+      }
+      reader.readAsDataURL(processedImage)
+
+      toast({
+        title: "Success",
+        description: "Noise added successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to add noise",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleRemoveNoise = async () => {
+    if (!currentImage || !imageName) return
+
+    try {
+      const formData = new FormData()
+      // Convert base64 to File
+      const imageResponse = await fetch(currentImage)
+      const imageBlob = await imageResponse.blob()
+      const file = new File([imageBlob], imageName, { type: 'image/png' })
+      formData.append('file', file)
+      formData.append('type', filterType)
+      
+      // Set parameters based on filter type
+      let params = {}
+      if (filterType === 'median') {
+        params = {
+          kernel_size: kernelSize
+        }
+      } else if (filterType === 'band_reject') {
+        params = {
+          cutoff_freq: cutoffFreq,
+          width: bandWidth
+        }
+      } else if (filterType === 'notch') {
+        // Convert points to the format expected by the backend
+        params = {
+          points: selectedPoints.map(point => ({
+            x: point.x,
+            y: point.y
+          }))
+        }
+      }
+      
+      formData.append('params', JSON.stringify(params))
+
+      const noiseResponse = await fetch('http://localhost:5000/noise/remove', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!noiseResponse.ok) {
+        const errorData = await noiseResponse.json()
+        throw new Error(errorData.error || 'Failed to remove noise')
+      }
+
+      const data = await noiseResponse.json()
+      
+      // Fetch the processed image from the backend
+      const processedImageResponse = await fetch(`http://localhost:5000/static/uploads/${data.processed_image}`)
+      if (!processedImageResponse.ok) {
+        throw new Error('Failed to fetch processed image')
+      }
+      
+      const processedBlob = await processedImageResponse.blob()
+      const processedImage = new File([processedBlob], imageName, { type: 'image/png' })
+      
+      // Convert File to base64 for the store
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setCurrentImage(reader.result)
+        }
+      }
+      reader.readAsDataURL(processedImage)
+
+      toast({
+        title: "Success",
+        description: "Noise removed successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to remove noise",
+        variant: "destructive"
+      })
+    }
+  }
 
   return (
     <div className="container mx-auto py-6 flex flex-col gap-6">
@@ -24,7 +200,7 @@ const Noise = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3 h-[500px]">
+        <div className="lg:col-span-3 h-[500px]" onClick={handleImageClick}>
           <ImageDisplay />
         </div>
         
@@ -65,25 +241,82 @@ const Noise = () => {
                         </Select>
                       </div>
                       
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Label htmlFor="noise-density" className="text-gray-700 dark:text-gray-300">Noise Density</Label>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">{noiseDensity}%</span>
+                      {noiseType === 'salt-pepper' && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <Label htmlFor="noise-density" className="text-gray-700 dark:text-gray-300">Noise Density</Label>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{noiseDensity}%</span>
+                          </div>
+                          <Slider 
+                            id="noise-density"
+                            min={1} 
+                            max={100} 
+                            step={1} 
+                            value={[noiseDensity]}
+                            onValueChange={(value) => setNoiseDensity(value[0])}
+                            disabled={!currentImage}
+                          />
                         </div>
-                        <Slider 
-                          id="noise-density"
-                          min={1} 
-                          max={100} 
-                          step={1} 
-                          value={[noiseDensity]}
-                          onValueChange={(value) => setNoiseDensity(value[0])}
-                          disabled={!currentImage}
-                        />
-                      </div>
+                      )}
+
+                      {noiseType === 'periodic' && (
+                        <>
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <Label htmlFor="frequency" className="text-gray-700 dark:text-gray-300">Frequency</Label>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{frequency}</span>
+                            </div>
+                            <Slider 
+                              id="frequency"
+                              min={1} 
+                              max={50} 
+                              step={1} 
+                              value={[frequency]}
+                              onValueChange={(value) => setFrequency(value[0])}
+                              disabled={!currentImage}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <Label htmlFor="amplitude" className="text-gray-700 dark:text-gray-300">Amplitude</Label>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{amplitude}</span>
+                            </div>
+                            <Slider 
+                              id="amplitude"
+                              min={1} 
+                              max={100} 
+                              step={1} 
+                              value={[amplitude]}
+                              onValueChange={(value) => setAmplitude(value[0])}
+                              disabled={!currentImage}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="pattern" className="text-gray-700 dark:text-gray-300">Pattern</Label>
+                            <Select 
+                              disabled={!currentImage} 
+                              value={pattern}
+                              onValueChange={setPattern}
+                            >
+                              <SelectTrigger id="pattern" className="border-gray-200 dark:border-gray-700">
+                                <SelectValue placeholder="Select pattern" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                                <SelectItem value="sine">Sine Wave</SelectItem>
+                                <SelectItem value="cosine">Cosine Wave</SelectItem>
+                                <SelectItem value="square">Square Wave</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </>
+                      )}
                       
                       <Button 
                         className="w-full mt-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600" 
                         disabled={!currentImage}
+                        onClick={handleAddNoise}
                       >
                         Add Noise
                       </Button>
@@ -95,7 +328,10 @@ const Noise = () => {
                         <Select 
                           disabled={!currentImage} 
                           value={filterType}
-                          onValueChange={setFilterType}
+                          onValueChange={(value) => {
+                            setFilterType(value)
+                            setSelectedPoints([])  // Clear points when changing filter type
+                          }}
                         >
                           <SelectTrigger id="filter-type" className="border-gray-200 dark:border-gray-700">
                             <SelectValue placeholder="Select filter type" />
@@ -103,30 +339,90 @@ const Noise = () => {
                           <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                             <SelectItem value="median">Median Filter</SelectItem>
                             <SelectItem value="notch">Notch Filter</SelectItem>
-                            <SelectItem value="band">Band Reject</SelectItem>
+                            <SelectItem value="band_reject">Band Reject</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Label htmlFor="kernel-size" className="text-gray-700 dark:text-gray-300">Kernel Size</Label>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">{kernelSize}x{kernelSize}</span>
+                      {filterType === 'median' && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <Label htmlFor="kernel-size" className="text-gray-700 dark:text-gray-300">Kernel Size</Label>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{kernelSize}x{kernelSize}</span>
+                          </div>
+                          <Slider 
+                            id="kernel-size"
+                            min={3} 
+                            max={9} 
+                            step={2} 
+                            value={[kernelSize]}
+                            onValueChange={(value) => setKernelSize(value[0])}
+                            disabled={!currentImage}
+                          />
                         </div>
-                        <Slider 
-                          id="kernel-size"
-                          min={3} 
-                          max={9} 
-                          step={2} 
-                          value={[kernelSize]}
-                          onValueChange={(value) => setKernelSize(value[0])}
-                          disabled={!currentImage}
-                        />
-                      </div>
+                      )}
+
+                      {filterType === 'band_reject' && (
+                        <>
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <Label htmlFor="cutoff-freq" className="text-gray-700 dark:text-gray-300">Cutoff Frequency</Label>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{cutoffFreq}</span>
+                            </div>
+                            <Slider 
+                              id="cutoff-freq"
+                              min={1} 
+                              max={100} 
+                              step={1} 
+                              value={[cutoffFreq]}
+                              onValueChange={(value) => setCutoffFreq(value[0])}
+                              disabled={!currentImage}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <Label htmlFor="band-width" className="text-gray-700 dark:text-gray-300">Band Width</Label>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{bandWidth}</span>
+                            </div>
+                            <Slider 
+                              id="band-width"
+                              min={1} 
+                              max={50} 
+                              step={1} 
+                              value={[bandWidth]}
+                              onValueChange={(value) => setBandWidth(value[0])}
+                              disabled={!currentImage}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {filterType === 'notch' && (
+                        <>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            Click on the image to select points for notch filtering. The filter will remove noise at the selected frequencies.
+                          </div>
+                          {selectedPoints.length > 0 && (
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              Selected points: {selectedPoints.length}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="ml-2"
+                                onClick={() => setSelectedPoints([])}
+                              >
+                                Clear Points
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      )}
                       
                       <Button 
                         className="w-full mt-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600" 
-                        disabled={!currentImage}
+                        disabled={!currentImage || (filterType === 'notch' && selectedPoints.length === 0)}
+                        onClick={handleRemoveNoise}
                       >
                         Remove Noise
                       </Button>
