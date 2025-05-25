@@ -213,7 +213,7 @@ const Filters = () => {
             disabled={!currentImage || isProcessing}
             onClick={handleReset}
           >
-            Reset Image
+            Reset Changes
           </Button>
         </div>
       </div>

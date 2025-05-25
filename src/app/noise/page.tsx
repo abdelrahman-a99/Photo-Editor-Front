@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { generateFFT, applyInverseFFT } from "@/lib/api"
 
 const Noise = () => {
-  const { currentImage, setCurrentImage, imageName } = usePhotoStore()
+  const { currentImage, setCurrentImage, imageName, resetImage } = usePhotoStore()
   const [noiseDensity, setNoiseDensity] = useState(10)
   const [kernelSize, setKernelSize] = useState(3)
   const [noiseType, setNoiseType] = useState("salt-pepper")
@@ -278,7 +278,7 @@ const Noise = () => {
   }
 
   const handleReset = () => {
-    setCurrentImage(null)
+    resetImage()
     setFftImage(null)
     setIsFFTMode(false)
     setSelectedPoints([])
@@ -559,7 +559,7 @@ const Noise = () => {
             disabled={!currentImage && !fftImage}
             onClick={handleReset}
           >
-            Reset Image
+            Reset Changes
           </Button>
         </div>
       </div>
