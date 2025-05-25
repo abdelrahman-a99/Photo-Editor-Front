@@ -23,6 +23,22 @@ interface HistogramData {
   };
 }
 
+interface EqualizeResponse {
+  message: string;
+  original_image: string;
+  equalized_image: string;
+  original_histograms: {
+    r: number[];
+    g: number[];
+    b: number[];
+  };
+  equalized_histograms: {
+    r: number[];
+    g: number[];
+    b: number[];
+  };
+}
+
 const Histogram = () => {
   const { currentImage, imageName } = usePhotoStore()
   const [histogramData, setHistogramData] = useState<HistogramData | null>(null)
@@ -52,10 +68,29 @@ const Histogram = () => {
 
     setIsLoading(true)
     try {
-      const data = await equalizeHistogram(imageName)
-      setHistogramData(data.equalized_histograms)
+      const response = await equalizeHistogram(imageName) as EqualizeResponse
+      console.log('Equalize response:', response)
+      
+      // Create a HistogramData object from the equalized histograms
+      const histogramData: HistogramData = {
+        histograms: response.equalized_histograms,
+        cumulative_histograms: {
+          r: response.equalized_histograms.r.map((_, i, arr) => 
+            arr.slice(0, i + 1).reduce((sum, val) => sum + val, 0)
+          ),
+          g: response.equalized_histograms.g.map((_, i, arr) => 
+            arr.slice(0, i + 1).reduce((sum, val) => sum + val, 0)
+          ),
+          b: response.equalized_histograms.b.map((_, i, arr) => 
+            arr.slice(0, i + 1).reduce((sum, val) => sum + val, 0)
+          )
+        }
+      }
+      
+      setHistogramData(histogramData)
       toast.success("Histogram equalized successfully")
     } catch (error) {
+      console.error('Equalize error:', error)
       toast.error(error instanceof Error ? error.message : "Failed to equalize histogram")
     } finally {
       setIsLoading(false)
