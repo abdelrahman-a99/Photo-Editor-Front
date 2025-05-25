@@ -147,4 +147,42 @@ export const downloadImage = async (filename: string) => {
       error: 'An unexpected error occurred while downloading the image' 
     };
   }
+};
+
+export const generateHistogram = async (imagePath: string) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/histogram/get`, {
+      filename: imagePath
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || 'Failed to generate histogram');
+    }
+    throw error;
+  }
+};
+
+export const equalizeHistogram = async (imagePath: string) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/histogram/equalize`, {
+      filename: imagePath
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || 'Failed to equalize histogram');
+    }
+    throw error;
+  }
 }; 
