@@ -17,6 +17,9 @@ const Noise = () => {
   const [kernelSize, setKernelSize] = useState(3)
   const [noiseType, setNoiseType] = useState("salt-pepper")
   const [filterType, setFilterType] = useState("median")
+  const [frequency, setFrequency] = useState(20)
+  const [amplitude, setAmplitude] = useState(50)
+  const [pattern, setPattern] = useState("sine")
   const { toast } = useToast()
 
   const handleAddNoise = async () => {
@@ -30,9 +33,22 @@ const Noise = () => {
       const file = new File([imageBlob], imageName, { type: 'image/png' })
       formData.append('file', file)
       formData.append('type', noiseType === 'salt-pepper' ? 'salt_pepper' : noiseType)
-      formData.append('params', JSON.stringify({
-        density: noiseDensity / 100 // Convert percentage to decimal
-      }))
+      
+      // Set parameters based on noise type
+      let params = {}
+      if (noiseType === 'salt-pepper') {
+        params = {
+          density: noiseDensity / 100 // Convert percentage to decimal
+        }
+      } else if (noiseType === 'periodic') {
+        params = {
+          frequency: frequency,
+          amplitude: amplitude,
+          pattern: pattern
+        }
+      }
+      
+      formData.append('params', JSON.stringify(params))
 
       const noiseResponse = await fetch('http://localhost:5000/noise/add', {
         method: 'POST',
@@ -183,21 +199,77 @@ const Noise = () => {
                         </Select>
                       </div>
                       
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Label htmlFor="noise-density" className="text-gray-700 dark:text-gray-300">Noise Density</Label>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">{noiseDensity}%</span>
+                      {noiseType === 'salt-pepper' && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <Label htmlFor="noise-density" className="text-gray-700 dark:text-gray-300">Noise Density</Label>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{noiseDensity}%</span>
+                          </div>
+                          <Slider 
+                            id="noise-density"
+                            min={1} 
+                            max={100} 
+                            step={1} 
+                            value={[noiseDensity]}
+                            onValueChange={(value) => setNoiseDensity(value[0])}
+                            disabled={!currentImage}
+                          />
                         </div>
-                        <Slider 
-                          id="noise-density"
-                          min={1} 
-                          max={100} 
-                          step={1} 
-                          value={[noiseDensity]}
-                          onValueChange={(value) => setNoiseDensity(value[0])}
-                          disabled={!currentImage}
-                        />
-                      </div>
+                      )}
+
+                      {noiseType === 'periodic' && (
+                        <>
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <Label htmlFor="frequency" className="text-gray-700 dark:text-gray-300">Frequency</Label>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{frequency}</span>
+                            </div>
+                            <Slider 
+                              id="frequency"
+                              min={1} 
+                              max={50} 
+                              step={1} 
+                              value={[frequency]}
+                              onValueChange={(value) => setFrequency(value[0])}
+                              disabled={!currentImage}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <Label htmlFor="amplitude" className="text-gray-700 dark:text-gray-300">Amplitude</Label>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{amplitude}</span>
+                            </div>
+                            <Slider 
+                              id="amplitude"
+                              min={1} 
+                              max={100} 
+                              step={1} 
+                              value={[amplitude]}
+                              onValueChange={(value) => setAmplitude(value[0])}
+                              disabled={!currentImage}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="pattern" className="text-gray-700 dark:text-gray-300">Pattern</Label>
+                            <Select 
+                              disabled={!currentImage} 
+                              value={pattern}
+                              onValueChange={setPattern}
+                            >
+                              <SelectTrigger id="pattern" className="border-gray-200 dark:border-gray-700">
+                                <SelectValue placeholder="Select pattern" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                                <SelectItem value="sine">Sine Wave</SelectItem>
+                                <SelectItem value="cosine">Cosine Wave</SelectItem>
+                                <SelectItem value="square">Square Wave</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </>
+                      )}
                       
                       <Button 
                         className="w-full mt-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600" 
