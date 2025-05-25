@@ -10,6 +10,7 @@ import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { generateFFT, applyInverseFFT } from "@/lib/api"
 
 const Noise = () => {
   const { currentImage, setCurrentImage, imageName } = usePhotoStore()
@@ -24,6 +25,8 @@ const Noise = () => {
   const [bandWidth, setBandWidth] = useState(10)
   const [selectedPoints, setSelectedPoints] = useState<{x: number, y: number}[]>([])
   const { toast } = useToast()
+  const [isFFTMode, setIsFFTMode] = useState(false)
+  const [fftImage, setFftImage] = useState<string | null>(null)
 
   const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (filterType !== 'notch' || !currentImage) return
@@ -193,6 +196,98 @@ const Noise = () => {
     }
   }
 
+  const handleGenerateFFT = async () => {
+    if (!currentImage || !imageName) return
+
+    try {
+      // Convert base64 to File
+      const imageResponse = await fetch(currentImage)
+      const imageBlob = await imageResponse.blob()
+      const file = new File([imageBlob], imageName, { type: 'image/png' })
+
+      const data = await generateFFT(file)
+      
+      // Fetch the FFT image from the backend
+      const fftResponse = await fetch(`http://localhost:5000/static/uploads/${data.fft_image}`)
+      if (!fftResponse.ok) {
+        throw new Error('Failed to fetch FFT image')
+      }
+      
+      const fftBlob = await fftResponse.blob()
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setFftImage(reader.result)
+          setIsFFTMode(true)
+        }
+      }
+      reader.readAsDataURL(fftBlob)
+
+      toast({
+        title: "Success",
+        description: "FFT generated successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate FFT",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleInverseFFT = async () => {
+    if (!fftImage || !imageName) return
+
+    try {
+      // Convert base64 to File
+      const imageResponse = await fetch(fftImage)
+      const imageBlob = await imageResponse.blob()
+      const file = new File([imageBlob], imageName, { type: 'image/png' })
+
+      const data = await applyInverseFFT(file)
+      
+      // Fetch the processed image from the backend
+      const processedImageResponse = await fetch(`http://localhost:5000/static/uploads/${data.processed_image}`)
+      if (!processedImageResponse.ok) {
+        throw new Error('Failed to fetch processed image')
+      }
+      
+      const processedBlob = await processedImageResponse.blob()
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setCurrentImage(reader.result)
+          setFftImage(null)
+          setIsFFTMode(false)
+        }
+      }
+      reader.readAsDataURL(processedBlob)
+
+      toast({
+        title: "Success",
+        description: "Inverse FFT applied successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to apply inverse FFT",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleReset = () => {
+    setCurrentImage(null)
+    setFftImage(null)
+    setIsFFTMode(false)
+    setSelectedPoints([])
+    toast({
+      title: "Success",
+      description: "Image reset to original",
+    })
+  }
+
   return (
     <div className="container mx-auto py-6 flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -201,7 +296,7 @@ const Noise = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3 h-[500px]" onClick={handleImageClick}>
-          <ImageDisplay />
+          <ImageDisplay image={isFFTMode ? fftImage : currentImage} />
         </div>
         
         <div className="lg:col-span-1 space-y-6">
@@ -434,7 +529,8 @@ const Noise = () => {
                   <div className="space-y-4">
                     <Button 
                       className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600" 
-                      disabled={!currentImage}
+                      disabled={!currentImage || isFFTMode}
+                      onClick={handleGenerateFFT}
                     >
                       Generate FFT
                     </Button>
@@ -442,7 +538,8 @@ const Noise = () => {
                     <Button 
                       className="w-full border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700" 
                       variant="outline"
-                      disabled={!currentImage}
+                      disabled={!fftImage}
+                      onClick={handleInverseFFT}
                     >
                       Inverse FFT
                     </Button>
@@ -459,7 +556,8 @@ const Noise = () => {
           <Button 
             variant="outline" 
             className="w-full border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700" 
-            disabled={!currentImage}
+            disabled={!currentImage && !fftImage}
+            onClick={handleReset}
           >
             Reset Image
           </Button>
