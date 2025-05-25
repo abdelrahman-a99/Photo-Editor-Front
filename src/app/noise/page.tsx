@@ -22,7 +22,27 @@ const Noise = () => {
   const [pattern, setPattern] = useState("sine")
   const [cutoffFreq, setCutoffFreq] = useState(30)
   const [bandWidth, setBandWidth] = useState(10)
+  const [selectedPoints, setSelectedPoints] = useState<{x: number, y: number}[]>([])
   const { toast } = useToast()
+
+  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (filterType !== 'notch' || !currentImage) return
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    
+    // Convert click coordinates to relative position (-1 to 1)
+    const relativeX = (x / rect.width) * 2 - 1
+    const relativeY = -((y / rect.height) * 2 - 1)  // Invert Y axis
+    
+    setSelectedPoints(prev => [...prev, { x: relativeX, y: relativeY }])
+    
+    toast({
+      title: "Point Selected",
+      description: `Added point at (${Math.round(relativeX * 100)}, ${Math.round(relativeY * 100)})`,
+    })
+  }
 
   const handleAddNoise = async () => {
     if (!currentImage || !imageName) return
@@ -118,6 +138,14 @@ const Noise = () => {
           cutoff_freq: cutoffFreq,
           width: bandWidth
         }
+      } else if (filterType === 'notch') {
+        // Convert points to the format expected by the backend
+        params = {
+          points: selectedPoints.map(point => ({
+            x: point.x,
+            y: point.y
+          }))
+        }
       }
       
       formData.append('params', JSON.stringify(params))
@@ -172,7 +200,7 @@ const Noise = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3 h-[500px]">
+        <div className="lg:col-span-3 h-[500px]" onClick={handleImageClick}>
           <ImageDisplay />
         </div>
         
@@ -300,7 +328,10 @@ const Noise = () => {
                         <Select 
                           disabled={!currentImage} 
                           value={filterType}
-                          onValueChange={setFilterType}
+                          onValueChange={(value) => {
+                            setFilterType(value)
+                            setSelectedPoints([])  // Clear points when changing filter type
+                          }}
                         >
                           <SelectTrigger id="filter-type" className="border-gray-200 dark:border-gray-700">
                             <SelectValue placeholder="Select filter type" />
@@ -368,14 +399,29 @@ const Noise = () => {
                       )}
 
                       {filterType === 'notch' && (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          Click on the image to select points for notch filtering. The filter will remove noise at the selected frequencies.
-                        </div>
+                        <>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            Click on the image to select points for notch filtering. The filter will remove noise at the selected frequencies.
+                          </div>
+                          {selectedPoints.length > 0 && (
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              Selected points: {selectedPoints.length}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="ml-2"
+                                onClick={() => setSelectedPoints([])}
+                              >
+                                Clear Points
+                              </Button>
+                            </div>
+                          )}
+                        </>
                       )}
                       
                       <Button 
                         className="w-full mt-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600" 
-                        disabled={!currentImage}
+                        disabled={!currentImage || (filterType === 'notch' && selectedPoints.length === 0)}
                         onClick={handleRemoveNoise}
                       >
                         Remove Noise
