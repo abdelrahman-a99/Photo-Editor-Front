@@ -77,6 +77,64 @@ const Noise = () => {
     }
   }
 
+  const handleRemoveNoise = async () => {
+    if (!currentImage || !imageName) return
+
+    try {
+      const formData = new FormData()
+      // Convert base64 to File
+      const imageResponse = await fetch(currentImage)
+      const imageBlob = await imageResponse.blob()
+      const file = new File([imageBlob], imageName, { type: 'image/png' })
+      formData.append('file', file)
+      formData.append('type', filterType)
+      formData.append('params', JSON.stringify({
+        kernel_size: kernelSize
+      }))
+
+      const noiseResponse = await fetch('http://localhost:5000/noise/remove', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!noiseResponse.ok) {
+        const errorData = await noiseResponse.json()
+        throw new Error(errorData.error || 'Failed to remove noise')
+      }
+
+      const data = await noiseResponse.json()
+      
+      // Fetch the processed image from the backend
+      const processedImageResponse = await fetch(`http://localhost:5000/static/uploads/${data.processed_image}`)
+      if (!processedImageResponse.ok) {
+        throw new Error('Failed to fetch processed image')
+      }
+      
+      const processedBlob = await processedImageResponse.blob()
+      const processedImage = new File([processedBlob], imageName, { type: 'image/png' })
+      
+      // Convert File to base64 for the store
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setCurrentImage(reader.result)
+        }
+      }
+      reader.readAsDataURL(processedImage)
+
+      toast({
+        title: "Success",
+        description: "Noise removed successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to remove noise",
+        variant: "destructive"
+      })
+    }
+  }
+
   return (
     <div className="container mx-auto py-6 flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -188,6 +246,7 @@ const Noise = () => {
                       <Button 
                         className="w-full mt-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600" 
                         disabled={!currentImage}
+                        onClick={handleRemoveNoise}
                       >
                         Remove Noise
                       </Button>
