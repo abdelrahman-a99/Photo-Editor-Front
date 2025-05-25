@@ -13,15 +13,19 @@ interface PhotoState {
   rotation: number
   crop: { x: number; y: number; width: number; height: number } | null
   scale: number
+  brightness: number
+  contrast: number
+  saturation: number
 
   uploadImage: (imageData: string, name: string) => Promise<void>
-  downloadImage: () => Promise<void>
+  downloadImage: () => Promise<{ success: boolean; error: string | null }>
   setProcessing: (status: boolean) => void
   resetImage: () => void
   setError: (error: string | null) => void
   rotateImage: (degrees: number) => void
   cropImage: (crop: { x: number; y: number; width: number; height: number }) => void
   resizeImage: (scale: number) => void
+  adjustImage: (brightness: number, contrast: number, saturation: number) => void
 }
 
 // Helper function to update the backend with the current image
@@ -53,7 +57,10 @@ const applyOperations = async (
   originalImage: string,
   rotation: number,
   crop: { x: number; y: number; width: number; height: number } | null,
-  scale: number
+  scale: number,
+  brightness: number = 100,
+  contrast: number = 100,
+  saturation: number = 100
 ): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
@@ -120,6 +127,29 @@ const applyOperations = async (
           height
         );
       }
+
+      // Apply adjustments
+      if (brightness !== 100 || contrast !== 100 || saturation !== 100) {
+        const imageData = ctx?.getImageData(0, 0, width, height);
+        if (imageData) {
+          const data = imageData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            // Apply brightness and contrast
+            data[i] = ((data[i] - 128) * contrast / 100 + 128) * brightness / 100;
+            data[i + 1] = ((data[i + 1] - 128) * contrast / 100 + 128) * brightness / 100;
+            data[i + 2] = ((data[i + 2] - 128) * contrast / 100 + 128) * brightness / 100;
+
+            // Apply saturation
+            if (saturation !== 100) {
+              const gray = 0.2989 * data[i] + 0.5870 * data[i + 1] + 0.1140 * data[i + 2];
+              data[i] = gray + (data[i] - gray) * saturation / 100;
+              data[i + 1] = gray + (data[i + 1] - gray) * saturation / 100;
+              data[i + 2] = gray + (data[i + 2] - gray) * saturation / 100;
+            }
+          }
+          ctx?.putImageData(imageData, 0, 0);
+        }
+      }
       
       resolve(canvas.toDataURL());
     };
@@ -130,13 +160,16 @@ const applyOperations = async (
 
 export const usePhotoStore = create<PhotoState>((set, get) => ({
   currentImage: null,
-  originalImage: null,
   imageName: null,
+  originalImage: null,
   isProcessing: false,
   error: null,
   rotation: 0,
   crop: null,
   scale: 1,
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
 
   uploadImage: async (imageData, name) => {
     try {
@@ -174,28 +207,37 @@ export const usePhotoStore = create<PhotoState>((set, get) => ({
   },
 
   downloadImage: async () => {
+    const state = get();
+    if (!state.imageName) {
+      set({ error: 'No image selected' });
+      return { success: false, error: 'No image selected' };
+    }
+    
     try {
       set({ isProcessing: true, error: null });
-      const state = usePhotoStore.getState();
+      const result = await apiDownloadImage(state.imageName);
       
-      if (!state.imageName) {
-        throw new Error('No image to download');
+      if (!result.success) {
+        set({ 
+          error: result.error,
+          isProcessing: false 
+        });
+        return { success: false, error: result.error };
       }
-
-      await apiDownloadImage(state.imageName);
-      set({ isProcessing: false });
+      
+      set({ isProcessing: false, error: null });
+      return { success: true, error: null };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to download image';
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to download image',
+        error: errorMessage,
         isProcessing: false 
       });
-      throw error;
+      return { success: false, error: errorMessage };
     }
   },
 
-  setProcessing: (status) => set({
-    isProcessing: status
-  }),
+  setProcessing: (status) => set({ isProcessing: status }),
 
   resetImage: () => set((state) => {
     if (!state.imageName) return state;
@@ -207,13 +249,14 @@ export const usePhotoStore = create<PhotoState>((set, get) => ({
       currentImage: state.originalImage,
       rotation: 0,
       crop: null,
-      scale: 1
+      scale: 1,
+      brightness: 100,
+      contrast: 100,
+      saturation: 100
     };
   }),
 
-  setError: (error) => set({
-    error
-  }),
+  setError: (error) => set({ error }),
 
   rotateImage: (degrees) => set((state) => {
     if (!state.originalImage || !state.imageName) return state;
@@ -226,7 +269,10 @@ export const usePhotoStore = create<PhotoState>((set, get) => ({
       state.originalImage,
       newRotation,
       state.crop,
-      state.scale
+      state.scale,
+      state.brightness,
+      state.contrast,
+      state.saturation
     ).then(newImageData => {
       set({ 
         currentImage: newImageData,
@@ -247,7 +293,10 @@ export const usePhotoStore = create<PhotoState>((set, get) => ({
       state.originalImage,
       state.rotation,
       crop,
-      state.scale
+      state.scale,
+      state.brightness,
+      state.contrast,
+      state.saturation
     ).then(newImageData => {
       set({ currentImage: newImageData });
       updateBackendImage(newImageData, state.imageName!);
@@ -265,7 +314,31 @@ export const usePhotoStore = create<PhotoState>((set, get) => ({
       state.originalImage,
       state.rotation,
       state.crop,
-      scale
+      scale,
+      state.brightness,
+      state.contrast,
+      state.saturation
+    ).then(newImageData => {
+      set({ currentImage: newImageData });
+      updateBackendImage(newImageData, state.imageName!);
+    });
+    
+    return state;
+  }),
+
+  adjustImage: (brightness, contrast, saturation) => set((state) => {
+    if (!state.originalImage || !state.imageName) return state;
+    
+    set({ brightness, contrast, saturation });
+    
+    applyOperations(
+      state.originalImage,
+      state.rotation,
+      state.crop,
+      state.scale,
+      brightness,
+      contrast,
+      saturation
     ).then(newImageData => {
       set({ currentImage: newImageData });
       updateBackendImage(newImageData, state.imageName!);
