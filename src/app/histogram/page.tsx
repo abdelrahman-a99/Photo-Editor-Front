@@ -12,14 +12,10 @@ import { toast } from "sonner"
 
 interface HistogramData {
   histograms: {
-    r: number[];
-    g: number[];
-    b: number[];
+    gray: number[];
   };
   cumulative_histograms: {
-    r: number[];
-    g: number[];
-    b: number[];
+    gray: number[];
   };
 }
 
@@ -28,14 +24,10 @@ interface EqualizeResponse {
   original_image: string;
   equalized_image: string;
   original_histograms: {
-    r: number[];
-    g: number[];
-    b: number[];
+    gray: number[];
   };
   equalized_histograms: {
-    r: number[];
-    g: number[];
-    b: number[];
+    gray: number[];
   };
 }
 
@@ -75,13 +67,7 @@ const Histogram = () => {
       const histogramData: HistogramData = {
         histograms: response.equalized_histograms,
         cumulative_histograms: {
-          r: response.equalized_histograms.r.map((_, i, arr) => 
-            arr.slice(0, i + 1).reduce((sum, val) => sum + val, 0)
-          ),
-          g: response.equalized_histograms.g.map((_, i, arr) => 
-            arr.slice(0, i + 1).reduce((sum, val) => sum + val, 0)
-          ),
-          b: response.equalized_histograms.b.map((_, i, arr) => 
+          gray: response.equalized_histograms.gray.map((_, i, arr) => 
             arr.slice(0, i + 1).reduce((sum, val) => sum + val, 0)
           )
         }

@@ -2,14 +2,10 @@ import { useEffect, useRef } from 'react'
 
 interface HistogramData {
   histograms: {
-    r: number[];
-    g: number[];
-    b: number[];
+    gray: number[];
   };
   cumulative_histograms: {
-    r: number[];
-    g: number[];
-    b: number[];
+    gray: number[];
   };
 }
 
@@ -39,9 +35,7 @@ export const HistogramChart = ({ data, showCumulative = false }: HistogramChartP
     const histData = showCumulative ? data.cumulative_histograms : data.histograms
 
     // Find the maximum value for scaling
-    const maxValue = Math.max(
-      ...Object.values(histData).flatMap(channel => channel)
-    )
+    const maxValue = Math.max(...histData.gray)
 
     // Set up the drawing area
     const padding = 20
@@ -49,32 +43,23 @@ export const HistogramChart = ({ data, showCumulative = false }: HistogramChartP
     const graphHeight = canvas.height - (padding * 2)
     const binWidth = graphWidth / 256
 
-    // Draw the histograms
-    const colors = {
-      r: 'rgba(255, 0, 0, 0.5)',
-      g: 'rgba(0, 255, 0, 0.5)',
-      b: 'rgba(0, 0, 255, 0.5)'
-    }
+    // Draw the histogram
+    ctx.beginPath()
+    ctx.strokeStyle = 'rgba(128, 128, 128, 0.8)'
+    ctx.lineWidth = 1
 
-    // Draw each channel
-    Object.entries(histData).forEach(([channel, values]) => {
-      ctx.beginPath()
-      ctx.strokeStyle = colors[channel as keyof typeof colors]
-      ctx.lineWidth = 1
-
-      values.forEach((value, i) => {
-        const x = padding + (i * binWidth)
-        const y = canvas.height - padding - ((value / maxValue) * graphHeight)
-        
-        if (i === 0) {
-          ctx.moveTo(x, y)
-        } else {
-          ctx.lineTo(x, y)
-        }
-      })
-
-      ctx.stroke()
+    histData.gray.forEach((value, i) => {
+      const x = padding + (i * binWidth)
+      const y = canvas.height - padding - ((value / maxValue) * graphHeight)
+      
+      if (i === 0) {
+        ctx.moveTo(x, y)
+      } else {
+        ctx.lineTo(x, y)
+      }
     })
+
+    ctx.stroke()
 
     // Draw axes
     ctx.beginPath()

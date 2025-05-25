@@ -153,6 +153,10 @@ export const generateHistogram = async (imagePath: string) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/histogram/get`, {
       filename: imagePath
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
     
     return response.data;
@@ -168,6 +172,10 @@ export const equalizeHistogram = async (imagePath: string) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/histogram/equalize`, {
       filename: imagePath
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
     
     return response.data;
