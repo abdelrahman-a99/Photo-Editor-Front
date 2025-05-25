@@ -1,13 +1,66 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ImageDisplay } from "@/components/editor/ImageDisplay"
+import { HistogramChart } from "@/components/editor/HistogramChart"
 import { usePhotoStore } from "@/store/photo-store"
 import { LineChart, BarChart } from "lucide-react"
+import { generateHistogram, equalizeHistogram } from "@/lib/api"
+import { toast } from "sonner"
+
+interface HistogramData {
+  histograms: {
+    r: number[];
+    g: number[];
+    b: number[];
+  };
+  cumulative_histograms: {
+    r: number[];
+    g: number[];
+    b: number[];
+  };
+}
 
 const Histogram = () => {
-  const { currentImage } = usePhotoStore()
+  const { currentImage, imageName } = usePhotoStore()
+  const [histogramData, setHistogramData] = useState<HistogramData | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [showCumulative, setShowCumulative] = useState(false)
+
+  const handleGenerateHistogram = async () => {
+    if (!imageName) return
+
+    setIsLoading(true)
+    try {
+      console.log('Image name:', imageName)
+      const data = await generateHistogram(imageName)
+      console.log('Histogram data:', data)
+      setHistogramData(data)
+      toast.success("Histogram generated successfully")
+    } catch (error) {
+      console.error('Histogram generation error:', error)
+      toast.error(error instanceof Error ? error.message : "Failed to generate histogram")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEqualizeHistogram = async () => {
+    if (!imageName) return
+
+    setIsLoading(true)
+    try {
+      const data = await equalizeHistogram(imageName)
+      setHistogramData(data.equalized_histograms)
+      toast.success("Histogram equalized successfully")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to equalize histogram")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="container mx-auto py-6 flex flex-col gap-6">
@@ -20,7 +73,7 @@ const Histogram = () => {
           <ImageDisplay />
         </div>
         
-        <div className="lg:col-span-1 space-y-6">
+        <div className="space-y-6">
           <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardHeader className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
               <CardTitle className="text-base text-gray-900 dark:text-gray-100">Histogram Functions</CardTitle>
@@ -28,7 +81,8 @@ const Histogram = () => {
             <CardContent className="px-4 py-3 space-y-4">
               <Button 
                 variant="outline" 
-                disabled={!currentImage} 
+                disabled={!currentImage || isLoading} 
+                onClick={handleGenerateHistogram}
                 className="w-full flex items-center gap-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <BarChart className="h-4 w-4" />
@@ -37,23 +91,42 @@ const Histogram = () => {
               
               <Button 
                 variant="outline" 
-                disabled={!currentImage} 
+                disabled={!currentImage || isLoading} 
+                onClick={handleEqualizeHistogram}
                 className="w-full flex items-center gap-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <LineChart className="h-4 w-4" />
                 <span>Equalize Histogram</span>
               </Button>
+
+              {histogramData && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowCumulative(!showCumulative)}
+                  className="w-full flex items-center gap-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <span>{showCumulative ? "Show Regular" : "Show Cumulative"}</span>
+                </Button>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="min-h-[200px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardHeader className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
               <CardTitle className="text-base text-gray-900 dark:text-gray-100">Histogram Chart</CardTitle>
             </CardHeader>
             <CardContent className="px-4 py-3">
-              {currentImage ? (
+              {isLoading ? (
                 <div className="h-40 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
-                  Histogram will appear here after processing
+                  Processing...
+                </div>
+              ) : histogramData ? (
+                <div className="h-40">
+                  <HistogramChart data={histogramData} showCumulative={showCumulative} />
+                </div>
+              ) : currentImage ? (
+                <div className="h-40 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+                  Click &quot;Generate Histogram&quot; to view the histogram
                 </div>
               ) : (
                 <div className="h-40 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
