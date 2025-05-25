@@ -17,6 +17,7 @@ interface PhotoState {
   contrast: number
   saturation: number
   applyFilter: (filterType: string, params: Record<string, number | string>) => Promise<void>
+  setCurrentImage: (image: string) => void
 
   uploadImage: (imageData: string, name: string) => Promise<void>
   downloadImage: () => Promise<{ success: boolean; error: string | null }>
@@ -171,6 +172,8 @@ export const usePhotoStore = create<PhotoState>((set, get) => ({
   brightness: 100,
   contrast: 100,
   saturation: 100,
+
+  setCurrentImage: (image) => set({ currentImage: image }),
 
   uploadImage: async (imageData, name) => {
     try {

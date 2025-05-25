@@ -9,13 +9,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
+import { useToast } from "@/hooks/use-toast"
 
 const Noise = () => {
-  const { currentImage } = usePhotoStore()
+  const { currentImage, setCurrentImage, imageName } = usePhotoStore()
   const [noiseDensity, setNoiseDensity] = useState(10)
   const [kernelSize, setKernelSize] = useState(3)
   const [noiseType, setNoiseType] = useState("salt-pepper")
   const [filterType, setFilterType] = useState("median")
+  const { toast } = useToast()
+
+  const handleAddNoise = async () => {
+    if (!currentImage || !imageName) return
+
+    try {
+      const formData = new FormData()
+      // Convert base64 to File
+      const imageResponse = await fetch(currentImage)
+      const imageBlob = await imageResponse.blob()
+      const file = new File([imageBlob], imageName, { type: 'image/png' })
+      formData.append('file', file)
+      formData.append('type', noiseType === 'salt-pepper' ? 'salt_pepper' : noiseType)
+      formData.append('params', JSON.stringify({
+        density: noiseDensity / 100 // Convert percentage to decimal
+      }))
+
+      const noiseResponse = await fetch('http://localhost:5000/noise/add', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!noiseResponse.ok) {
+        const errorData = await noiseResponse.json()
+        throw new Error(errorData.error || 'Failed to add noise')
+      }
+
+      const data = await noiseResponse.json()
+      
+      // Fetch the processed image from the backend
+      const processedImageResponse = await fetch(`http://localhost:5000/static/uploads/${data.processed_image}`)
+      if (!processedImageResponse.ok) {
+        throw new Error('Failed to fetch processed image')
+      }
+      
+      const processedBlob = await processedImageResponse.blob()
+      const processedImage = new File([processedBlob], imageName, { type: 'image/png' })
+      
+      // Convert File to base64 for the store
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setCurrentImage(reader.result)
+        }
+      }
+      reader.readAsDataURL(processedImage)
+
+      toast({
+        title: "Success",
+        description: "Noise added successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to add noise",
+        variant: "destructive"
+      })
+    }
+  }
 
   return (
     <div className="container mx-auto py-6 flex flex-col gap-6">
@@ -84,6 +144,7 @@ const Noise = () => {
                       <Button 
                         className="w-full mt-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600" 
                         disabled={!currentImage}
+                        onClick={handleAddNoise}
                       >
                         Add Noise
                       </Button>
