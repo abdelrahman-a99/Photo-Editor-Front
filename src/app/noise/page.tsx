@@ -20,6 +20,8 @@ const Noise = () => {
   const [frequency, setFrequency] = useState(20)
   const [amplitude, setAmplitude] = useState(50)
   const [pattern, setPattern] = useState("sine")
+  const [cutoffFreq, setCutoffFreq] = useState(30)
+  const [bandWidth, setBandWidth] = useState(10)
   const { toast } = useToast()
 
   const handleAddNoise = async () => {
@@ -104,9 +106,21 @@ const Noise = () => {
       const file = new File([imageBlob], imageName, { type: 'image/png' })
       formData.append('file', file)
       formData.append('type', filterType)
-      formData.append('params', JSON.stringify({
-        kernel_size: kernelSize
-      }))
+      
+      // Set parameters based on filter type
+      let params = {}
+      if (filterType === 'median') {
+        params = {
+          kernel_size: kernelSize
+        }
+      } else if (filterType === 'band_reject') {
+        params = {
+          cutoff_freq: cutoffFreq,
+          width: bandWidth
+        }
+      }
+      
+      formData.append('params', JSON.stringify(params))
 
       const noiseResponse = await fetch('http://localhost:5000/noise/remove', {
         method: 'POST',
@@ -294,26 +308,70 @@ const Noise = () => {
                           <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                             <SelectItem value="median">Median Filter</SelectItem>
                             <SelectItem value="notch">Notch Filter</SelectItem>
-                            <SelectItem value="band">Band Reject</SelectItem>
+                            <SelectItem value="band_reject">Band Reject</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Label htmlFor="kernel-size" className="text-gray-700 dark:text-gray-300">Kernel Size</Label>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">{kernelSize}x{kernelSize}</span>
+                      {filterType === 'median' && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <Label htmlFor="kernel-size" className="text-gray-700 dark:text-gray-300">Kernel Size</Label>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{kernelSize}x{kernelSize}</span>
+                          </div>
+                          <Slider 
+                            id="kernel-size"
+                            min={3} 
+                            max={9} 
+                            step={2} 
+                            value={[kernelSize]}
+                            onValueChange={(value) => setKernelSize(value[0])}
+                            disabled={!currentImage}
+                          />
                         </div>
-                        <Slider 
-                          id="kernel-size"
-                          min={3} 
-                          max={9} 
-                          step={2} 
-                          value={[kernelSize]}
-                          onValueChange={(value) => setKernelSize(value[0])}
-                          disabled={!currentImage}
-                        />
-                      </div>
+                      )}
+
+                      {filterType === 'band_reject' && (
+                        <>
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <Label htmlFor="cutoff-freq" className="text-gray-700 dark:text-gray-300">Cutoff Frequency</Label>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{cutoffFreq}</span>
+                            </div>
+                            <Slider 
+                              id="cutoff-freq"
+                              min={1} 
+                              max={100} 
+                              step={1} 
+                              value={[cutoffFreq]}
+                              onValueChange={(value) => setCutoffFreq(value[0])}
+                              disabled={!currentImage}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <Label htmlFor="band-width" className="text-gray-700 dark:text-gray-300">Band Width</Label>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{bandWidth}</span>
+                            </div>
+                            <Slider 
+                              id="band-width"
+                              min={1} 
+                              max={50} 
+                              step={1} 
+                              value={[bandWidth]}
+                              onValueChange={(value) => setBandWidth(value[0])}
+                              disabled={!currentImage}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {filterType === 'notch' && (
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          Click on the image to select points for notch filtering. The filter will remove noise at the selected frequencies.
+                        </div>
+                      )}
                       
                       <Button 
                         className="w-full mt-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600" 
