@@ -212,13 +212,32 @@ export const usePhotoStore = create<PhotoState>((set, get) => ({
 
   downloadImage: async () => {
     const state = get();
-    if (!state.imageName) {
+    if (!state.imageName || !state.currentImage) {
       set({ error: 'No image selected' });
       return { success: false, error: 'No image selected' };
     }
     
     try {
       set({ isProcessing: true, error: null });
+      
+      // First, ensure the current image is saved to the backend
+      const response = await fetch(state.currentImage);
+      const blob = await response.blob();
+      const file = new File([blob], state.imageName, { type: blob.type });
+      
+      // Create form data and update the backend
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('processed', 'true');
+      
+      // Update the backend with current image
+      await axios.post(`${API_BASE_URL}/upload/update/${state.imageName}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      
+      // Now download the image
       const result = await apiDownloadImage(state.imageName);
       
       if (!result.success) {
