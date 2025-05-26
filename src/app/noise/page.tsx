@@ -27,6 +27,7 @@ const Noise = () => {
   const { toast } = useToast()
   const [isFFTMode, setIsFFTMode] = useState(false)
   const [fftImage, setFftImage] = useState<string | null>(null)
+  const [fftVisualization, setFftVisualization] = useState<string | null>(null)
 
   const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (filterType !== 'notch' || !currentImage) return
@@ -142,12 +143,16 @@ const Noise = () => {
           width: bandWidth
         }
       } else if (filterType === 'notch') {
-        // Convert points to the format expected by the backend
         params = {
           points: selectedPoints.map(point => ({
             x: point.x,
             y: point.y
           }))
+        }
+      } else if (filterType === 'periodic') {
+        params = {
+          frequency: frequency,
+          bandwidth: bandWidth
         }
       }
       
@@ -173,6 +178,22 @@ const Noise = () => {
       
       const processedBlob = await processedImageResponse.blob()
       const processedImage = new File([processedBlob], imageName, { type: 'image/png' })
+      
+      // If FFT visualization is available, fetch it
+      if (data.fft_visualization) {
+        const fftVisResponse = await fetch(`http://localhost:5000/static/uploads/${data.fft_visualization}`)
+        if (fftVisResponse.ok) {
+          const fftVisBlob = await fftVisResponse.blob()
+          const reader = new FileReader()
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              setFftVisualization(reader.result)
+              setIsFFTMode(true)  // Switch to FFT view
+            }
+          }
+          reader.readAsDataURL(fftVisBlob)
+        }
+      }
       
       // Convert File to base64 for the store
       const reader = new FileReader()
@@ -280,6 +301,7 @@ const Noise = () => {
   const handleReset = () => {
     setCurrentImage(null)
     setFftImage(null)
+    setFftVisualization(null)
     setIsFFTMode(false)
     setSelectedPoints([])
     toast({
@@ -296,7 +318,7 @@ const Noise = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3 h-[500px]" onClick={handleImageClick}>
-          <ImageDisplay image={isFFTMode ? fftImage : currentImage} />
+          <ImageDisplay image={isFFTMode ? (fftVisualization || fftImage) : currentImage} />
         </div>
         
         <div className="lg:col-span-1 space-y-6">
@@ -434,7 +456,8 @@ const Noise = () => {
                           <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                             <SelectItem value="median">Median Filter</SelectItem>
                             <SelectItem value="notch">Notch Filter</SelectItem>
-                            <SelectItem value="band_reject">Band Reject</SelectItem>
+                            <SelectItem value="band_reject">Band Reject Filter</SelectItem>
+                            <SelectItem value="periodic">Periodic Noise Filter</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -484,6 +507,42 @@ const Noise = () => {
                               id="band-width"
                               min={1} 
                               max={50} 
+                              step={1} 
+                              value={[bandWidth]}
+                              onValueChange={(value) => setBandWidth(value[0])}
+                              disabled={!currentImage}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {filterType === 'periodic' && (
+                        <>
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <Label htmlFor="noise-frequency" className="text-gray-700 dark:text-gray-300">Noise Frequency</Label>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{frequency}</span>
+                            </div>
+                            <Slider 
+                              id="noise-frequency"
+                              min={1} 
+                              max={50} 
+                              step={1} 
+                              value={[frequency]}
+                              onValueChange={(value) => setFrequency(value[0])}
+                              disabled={!currentImage}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <Label htmlFor="bandwidth" className="text-gray-700 dark:text-gray-300">Filter Bandwidth</Label>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">{bandWidth}</span>
+                            </div>
+                            <Slider 
+                              id="bandwidth"
+                              min={1} 
+                              max={20} 
                               step={1} 
                               value={[bandWidth]}
                               onValueChange={(value) => setBandWidth(value[0])}
